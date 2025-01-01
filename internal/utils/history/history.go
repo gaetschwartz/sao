@@ -62,7 +62,6 @@ func (q *BoundedHistory[T]) AddAll(elems []T) {
 		q.written += len(last) - space_after_cursor
 	}
 	q.cursor = q.written - 1
-
 }
 
 // Pop an element from the queue

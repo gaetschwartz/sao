@@ -150,7 +150,7 @@ func (p *PathPatternEvaluator) Evaluate() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Clean(result), nil
+	return filepath.ToSlash(filepath.Clean(result)), nil
 }
 
 func (p *PathPatternEvaluator) evaluateInternal(pattern string) (string, error) {
@@ -167,7 +167,7 @@ func (p *PathPatternEvaluator) evaluateInternal(pattern string) (string, error) 
 			subPattern := pattern[1:closingBrace]
 			evaluated, err := p.evaluateVariable(subPattern)
 			if err != nil {
-				return "", fmt.Errorf("error evaluating variable %s (%s)", subPattern, err)
+				return "", fmt.Errorf("error evaluating variable %s (%w)", subPattern, err)
 			}
 			evaluated.WriteToBuilder(&result)
 			pattern = pattern[closingBrace+1:]
@@ -205,7 +205,7 @@ func (p *PathPatternEvaluator) evaluateInternal(pattern string) (string, error) 
 	out := result.String()
 	// check if the result is a valid path
 	if _, err := p.filesystem.Stat(out); err != nil {
-		return "", fmt.Errorf("invalid path %s (%s)", out, err)
+		return "", fmt.Errorf("invalid path %s (%w)", out, err)
 	}
 	return out, nil
 }
@@ -229,7 +229,7 @@ func (p *PathPatternEvaluator) evaluateVariable(variable string) (ExistingPath, 
 			result = p.context.arch
 		case "app_path":
 			if p.context.appPath == "" {
-				return "", fmt.Errorf("app_path not set")
+				return "", errors.New("app_path not set")
 			} else {
 				result = p.context.appPath
 			}
@@ -250,7 +250,7 @@ func (p *PathPatternEvaluator) Exists(subpath string) (ExistingPath, error) {
 	}
 	fullPath := filepath.Join(p.root, subpath)
 	if _, err := p.filesystem.Stat(fullPath); err != nil {
-		return "", fmt.Errorf("path %s does not exist (%s)", fullPath, err)
+		return "", fmt.Errorf("path %s does not exist (%w)", fullPath, err)
 	}
 	return ExistingPath(fullPath), nil
 }

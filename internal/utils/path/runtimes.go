@@ -110,7 +110,7 @@ func (m *GoRoutinesLifecycleManager[T, R]) RunAll(f func(int, T) (R, error), ele
 	wg.Wait()
 
 	results := make([]TaskResult[R], len(elems))
-	for i := 0; i < len(elems); i++ {
+	for i := range len(elems) {
 		if res, err := <-ch, <-err_ch; err == nil {
 			results[i] = TaskResult[R]{Result: res}
 		} else {

@@ -93,10 +93,9 @@ func TestEvaluateEither(t *testing.T) {
 func MockFileSystemMap(files ...string) map[string]int {
 	m := make(map[string]int)
 	for _, f := range files {
-		for dir := f; dir != "/"; dir = filepath.Dir(dir) {
+		for dir := f; dir != "/"; dir = filepath.ToSlash(filepath.Dir(dir)) {
 			m[dir] = 0
 		}
-
 	}
 	return m
 }

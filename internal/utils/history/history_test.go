@@ -8,25 +8,25 @@ import (
 
 func TestBoundedHistoryAddingAndRestoring(t *testing.T) {
 	h := NewBoundedHistory[int](3)
-	h.Add(1)                     //  v cursor
-	assert.Equal(t, 1, h.Get())  // [1, x, x]
-	h.Add(2)                     //     v cursor
-	assert.Equal(t, 2, h.Get())  // [1, 2, x]
-	h.Add(3)                     //        v cursor
-	assert.Equal(t, 3, h.Get())  // [1, 2, 3]
-	h.Add(4)                     //  v cursor
-	assert.Equal(t, 4, h.Get())  // [4, 2, 3]
-	h.Add(5)                     //     v cursor
-	assert.Equal(t, 5, h.Get())  // [4, 5, 3]
-	el1, can1 := h.Restore()     //  v cursor
-	assert.Equal(t, 4, el1)      // [4, 5, 3]
-	assert.Equal(t, true, can1)  //
-	el2, can2 := h.Restore()     //  			 v cursor
-	assert.Equal(t, 3, el2)      // [4, 5, 3]
-	assert.Equal(t, true, can2)  //
-	el3, can3 := h.Restore()     //        v cursor
-	assert.Equal(t, 3, el3)      // [4, 5, 3]
-	assert.Equal(t, false, can3) //        v cursor
+	h.Add(1)                    //  v cursor
+	assert.Equal(t, 1, h.Get()) // [1, x, x]
+	h.Add(2)                    //     v cursor
+	assert.Equal(t, 2, h.Get()) // [1, 2, x]
+	h.Add(3)                    //        v cursor
+	assert.Equal(t, 3, h.Get()) // [1, 2, 3]
+	h.Add(4)                    //  v cursor
+	assert.Equal(t, 4, h.Get()) // [4, 2, 3]
+	h.Add(5)                    //     v cursor
+	assert.Equal(t, 5, h.Get()) // [4, 5, 3]
+	el1, can1 := h.Restore()    //  v cursor
+	assert.Equal(t, 4, el1)     // [4, 5, 3]
+	assert.True(t, can1)        //
+	el2, can2 := h.Restore()    //  			 v cursor
+	assert.Equal(t, 3, el2)     // [4, 5, 3]
+	assert.True(t, can2)        //
+	el3, can3 := h.Restore()    //        v cursor
+	assert.Equal(t, 3, el3)     // [4, 5, 3]
+	assert.False(t, can3)       //        v cursor
 }
 
 func TestBoundedHistoryAddAll(t *testing.T) {

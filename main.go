@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"time"
 
@@ -11,7 +12,17 @@ import (
 )
 
 func main() {
+	var verbose = flag.Bool("v", false, "Verbose output")
+	var help = flag.Bool("h", false, "Show help")
+	flag.Parse()
 	l := log.NewFromEnv()
+	if *verbose {
+		l.CurrentLevel = log.LevelDebug
+	}
+	if *help {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	l.Debug("Getting manifest...")
 	timer := time.Now()
@@ -26,28 +37,28 @@ func main() {
 	var total int64
 	for _, app := range manifest.Apps {
 		l.Debug("  Evaluating app %s", app.Name)
-		path, err := app.Path.Eval(ctx)
-		if err != nil {
+		path, errP := app.Path.Eval(ctx)
+		if errP != nil {
 			l.Debug("  Skipping app %s: %s", app.Name, err)
 			continue
 		}
 		l.Info("  Found %s at %s", app.Name, path)
 		for _, cache := range app.Caches {
 			l.Debug("    Evaluating cache %s", cache)
-			path, err := cache.Eval(ctx)
-			if err != nil {
+			cachePath, errC := cache.Eval(ctx)
+			if errC != nil {
 				l.Debug("    Skipping cache %s: %s", cache, err)
 				continue
 			}
-			l.Info("    Found cache path %s", path)
-			size, err := io.DiskUsage(path)
+			l.Info("    Found cache path %s", cachePath)
+			size, errD := io.DiskUsage(cachePath)
 			total += size
-			if err != nil {
+			if errD != nil {
 				l.Error("Error calculating disk usage: %s", err)
 				os.Exit(1)
 			}
-			l.Debug("    Cache %s takes %d bytes", path, size)
-			l.Info("    Cache %s takes %s", path, io.HumanizeBytes(size))
+			l.Debug("    Cache %s takes %d bytes", cachePath, size)
+			l.Info("    Cache %s takes %s", cachePath, io.HumanizeBytes(size))
 		}
 	}
 

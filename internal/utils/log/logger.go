@@ -19,7 +19,7 @@ func NewFromEnv() *Logger {
 	if l, err := ParseLevel(config.Runtime.LogLevel); err == nil {
 		logger.CurrentLevel = l
 	} else {
-		logger.Error("Error parsing log level: %s", err)
+		logger.Warn("Failed to parse log level in env '%s': %s", config.LogLevelEnvKey, err)
 	}
 	return logger
 }

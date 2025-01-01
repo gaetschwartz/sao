@@ -45,7 +45,7 @@ func diskUsage(path string, size *atomic.Int64, errors chan error, wg *sync.Wait
 
 	dir, err := os.ReadDir(path)
 	if err != nil {
-		errors <- fmt.Errorf("error reading directory %s: %s", path, err)
+		errors <- fmt.Errorf("error reading directory %s: %w", path, err)
 		return
 	}
 	for _, entry := range dir {
@@ -56,7 +56,7 @@ func diskUsage(path string, size *atomic.Int64, errors chan error, wg *sync.Wait
 		}
 		info, err := entry.Info()
 		if err != nil {
-			errors <- fmt.Errorf("error getting info for %s: %s", entry.Name(), err)
+			errors <- fmt.Errorf("error getting info for %s: %w", entry.Name(), err)
 			continue
 		}
 		size.Add(info.Size())
