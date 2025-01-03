@@ -18,6 +18,7 @@ func main() {
 	l := log.NewFromEnv()
 	if *verbose {
 		l.CurrentLevel = log.LevelDebug
+		l.ShowTimings = true
 	}
 	if *help {
 		flag.Usage()

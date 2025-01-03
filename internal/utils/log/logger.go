@@ -5,18 +5,21 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gaetschwartz/devcleaner-go/internal/config"
 	"github.com/gaetschwartz/devcleaner-go/internal/utils/ansi"
 )
 
 type Logger struct {
-	CurrentLevel LogLevel
+	CurrentLevel Level
+	ShowTimings  bool
+	createdAt    time.Time
 }
 
 func NewFromEnv() *Logger {
 	logger := New()
-	if l, err := ParseLevel(config.Runtime.LogLevel); err == nil {
+	if l, err := ParseLevel(config.Config.LogLevel); err == nil {
 		logger.CurrentLevel = l
 	} else {
 		logger.Warn("Failed to parse log level in env '%s': %s", config.LogLevelEnvKey, err)
@@ -26,22 +29,23 @@ func NewFromEnv() *Logger {
 func New() *Logger {
 	return &Logger{
 		CurrentLevel: LevelInfo,
+		createdAt:    time.Now(),
 	}
 }
 
-type LogLevel int
+type Level int
 
 const (
-	LevelDebug = LogLevel(iota)
-	LevelInfo  = LogLevel(iota)
-	LevelWarn  = LogLevel(iota)
-	LevelError = LogLevel(iota)
-	LevelFatal = LogLevel(iota)
-	LevelNone  = LogLevel(iota)
+	LevelDebug = Level(iota)
+	LevelInfo  = Level(iota)
+	LevelWarn  = Level(iota)
+	LevelError = Level(iota)
+	LevelFatal = Level(iota)
+	LevelNone  = Level(iota)
 )
 
-func (level LogLevel) String() string {
-	switch level {
+func (l Level) String() string {
+	switch l {
 	case LevelDebug:
 		return "debug"
 	case LevelInfo:
@@ -52,16 +56,14 @@ func (level LogLevel) String() string {
 		return "error"
 	case LevelFatal:
 		return "fatal"
+	case LevelNone:
+		return "none"
 	default:
 		panic("unknown log level")
 	}
 }
 
-func (l LogLevel) shortString() string {
-	return strings.ToUpper(l.String()[0:1])
-}
-
-func (l LogLevel) color() ansi.Code {
+func (l Level) color() ansi.Code {
 	switch l {
 	case LevelNone:
 		return ansi.Empty
@@ -73,12 +75,14 @@ func (l LogLevel) color() ansi.Code {
 		return ansi.Yellow
 	case LevelError:
 		return ansi.Red
+	case LevelFatal:
+		return ansi.Red
 	default:
 		return ansi.Empty
 	}
 }
 
-func ParseLevel(s string) (LogLevel, error) {
+func ParseLevel(s string) (Level, error) {
 	switch strings.ToLower(s) {
 	case "debug":
 		return LevelDebug, nil
@@ -95,7 +99,7 @@ func ParseLevel(s string) (LogLevel, error) {
 	}
 }
 
-func (l LogLevel) textColor() ansi.Code {
+func (l Level) textColor() ansi.Code {
 	switch l {
 	case LevelDebug:
 		return ansi.Dim
@@ -104,7 +108,7 @@ func (l LogLevel) textColor() ansi.Code {
 	}
 }
 
-func (l LogLevel) writer() io.Writer {
+func (l Level) writer() io.Writer {
 	switch l {
 	case LevelDebug, LevelInfo, LevelWarn:
 		return os.Stdout
@@ -115,10 +119,18 @@ func (l LogLevel) writer() io.Writer {
 	}
 }
 
-func (l *Logger) log(level LogLevel, msg string, args ...any) {
+func (l *Logger) log(level Level, msg string, args ...any) {
 	code := level.color()
 	textStyle := level.textColor()
-	fmt.Fprintf(level.writer(), string(ansi.Str("[%-5s] ").Style(code, textStyle)+ansi.Str("%s\n").Style(textStyle)), level, fmt.Sprintf(msg, args...))
+	var timings string
+	if l.ShowTimings {
+		timings = ansi.Dim.String() + fmt.Sprintf("%-6d", time.Since(l.createdAt).Milliseconds()) + ansi.Empty.String()
+	}
+	fmt.Fprintf(
+		level.writer(),
+		timings+string(ansi.Str("[%-5s] ").Style(code, textStyle)+ansi.Str("%s\n").Style(textStyle)),
+		level, fmt.Sprintf(msg, args...),
+	)
 }
 
 func (l *Logger) Debug(msg string, args ...any) {

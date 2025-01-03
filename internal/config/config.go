@@ -15,15 +15,17 @@ func GetLocalManifestPath() string {
 }
 
 type RuntimeConfig struct {
-	ManifestUrl string
-	ManifestTtl time.Duration
+	ManifestURL string
+	ManifestTTL time.Duration
 	LogLevel    string
+	StartedAt   time.Time
 }
 
-var Runtime = RuntimeConfig{
-	ManifestUrl: defaultManifestUrl,
-	ManifestTtl: defaultLocalManifestTTL,
+var Config = RuntimeConfig{
+	ManifestURL: defaultManifestUrl,
+	ManifestTTL: defaultLocalManifestTTL,
 	LogLevel:    defaultLogLevel,
+	StartedAt:   time.Now(),
 }
 
 const defaultLogLevel = "INFO"
@@ -50,15 +52,15 @@ func init() {
 		}
 
 		if parts[0] == ManifestUrlEnvKey {
-			Runtime.ManifestUrl = parts[1]
+			Config.ManifestURL = parts[1]
 		} else if parts[0] == ManifestTtlEnvKey {
 			ttl, err := time.ParseDuration(parts[1])
 			if err != nil {
 				invalidConfigError("manifest ttl", parts[1])
 			}
-			Runtime.ManifestTtl = ttl
+			Config.ManifestTTL = ttl
 		} else if parts[0] == LogLevelEnvKey {
-			Runtime.LogLevel = parts[1]
+			Config.LogLevel = parts[1]
 		}
 	}
 }

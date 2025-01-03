@@ -45,7 +45,7 @@ func GetLocalManifest() (*ManifestWithTime, error) {
 }
 
 func FetchManifestFromRemote() (*Manifest, error) {
-	manifest_url := config.Runtime.ManifestUrl
+	manifest_url := config.Config.ManifestURL
 	resp, err := http.Get(manifest_url)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func GetManifest(l *log.Logger) (*Manifest, error) {
 	} else if localManifest != nil {
 		l.Debug("Found local manifest at %s", config.GetLocalManifestPath())
 		// check if its not too old
-		if time.Since(localManifest.ModTime) < config.Runtime.ManifestTtl {
+		if time.Since(localManifest.ModTime) < config.Config.ManifestTTL {
 			l.Debug("Local manifest is not too old")
 			return &localManifest.Manifest, nil
 		}

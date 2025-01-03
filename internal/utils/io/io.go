@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"sync"
 	"sync/atomic"
+	"time"
+
+	"github.com/gaetschwartz/devcleaner-go/internal/config"
 )
 
 // Recursively calculates the disk usage of a directory
@@ -21,14 +24,18 @@ func DiskUsage(path string) (int64, error) {
 	go diskUsage(path, &size, errors, &wg)
 	wg.Wait()
 	// drain all the values from the channel
+	// timeIt(func() interface{} {
 	for len(errors) > 0 {
 		if err := <-errors; err != nil {
 			fmt.Printf("DiskUsage(%s): error: %s\n", path, err)
-			return 0, err
+			panic(err)
 		}
 	}
+	// 	return nil
+	// }, "drain errors")
 
 	total := size.Load()
+	// total := timeIt(size.Load, "size.Load()")
 	// fmt.Printf("DiskUsage(%s): total: %d\n", path, total)
 
 	return total, nil
@@ -52,14 +59,14 @@ func diskUsage(path string, size *atomic.Int64, errors chan error, wg *sync.Wait
 		if entry.IsDir() {
 			wg.Add(1)
 			go diskUsage(filepath.Join(path, entry.Name()), size, errors, wg)
-			continue
+		} else {
+			info, errInfo := entry.Info()
+			if errInfo != nil {
+				errors <- fmt.Errorf("error getting info for %s: %w", entry.Name(), errInfo)
+				continue
+			}
+			size.Add(info.Size())
 		}
-		info, err := entry.Info()
-		if err != nil {
-			errors <- fmt.Errorf("error getting info for %s: %w", entry.Name(), err)
-			continue
-		}
-		size.Add(info.Size())
 	}
 }
 
@@ -75,4 +82,37 @@ func HumanizeBytes(size int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB",
 		float64(size)/float64(div), "kMGTPE"[exp])
+}
+
+func timeIt[T any](f func() T, name string) T {
+	start := time.Now()
+	out := f()
+	fmt.Printf("%-5d %s took %s\n", time.Since(config.Config.StartedAt).Milliseconds(), name, time.Since(start))
+	return out
+}
+
+func SyncDiskUsage(path string) (int64, error) {
+	dir, err := os.ReadDir(path)
+	if err != nil {
+		return 0, err
+	}
+
+	var size int64
+	for _, entry := range dir {
+		if entry.IsDir() {
+			subSize, errDU := SyncDiskUsage(filepath.Join(path, entry.Name()))
+			if errDU != nil {
+				return 0, errDU
+			}
+			size += subSize
+		} else {
+			info, errInfo := entry.Info()
+			if errInfo != nil {
+				return 0, errInfo
+			}
+			size += info.Size()
+		}
+	}
+
+	return size, nil
 }
